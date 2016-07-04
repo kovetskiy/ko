@@ -17,6 +17,19 @@ var config Config
 ko.Load("app.conf", &config)
 ```
 
+You can pass custom unmarshaller if you use custom format.
+
+```go
+type Config struct {
+    Hostname string `default:"localhost"`
+    Username string `required:"true"`
+    Password string
+}
+
+var config Config
+ko.Load("app.json", &config, json.Unmarshal)
+```
+
 ## License
 
 MIT.
