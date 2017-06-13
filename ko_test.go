@@ -170,6 +170,32 @@ b = true
 	test.Equal("aaa", resource.A)
 }
 
+func TestSkipUnexportedFields(t *testing.T) {
+	test := assert.New(t)
+
+	path := write(`
+a = true
+`)
+	defer os.Remove(path)
+
+	type config struct {
+		A bool
+
+		unexported bool
+	}
+
+	resource := config{}
+	test.NoError(
+		Load(path, &resource),
+	)
+
+	ko := config{}
+	ko.A = true
+	ko.unexported = false
+
+	test.Equal(ko, resource)
+}
+
 func write(data string) string {
 	file, err := ioutil.TempFile(os.TempDir(), "ko_")
 	if err != nil {

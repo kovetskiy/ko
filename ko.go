@@ -78,7 +78,12 @@ func validate(
 		var (
 			resourceField = resource.Field(index)
 			structField   = resourceStruct.Field(index)
+			fieldName     = string(structField.Name)
 		)
+
+		if fieldName[0] == strings.ToLower(fieldName)[0] {
+			continue
+		}
 
 		if reflect.DeepEqual(
 			resourceField.Interface(),
