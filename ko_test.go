@@ -81,12 +81,12 @@ func TestRequired(t *testing.T) {
 	}
 
 	resource := config{}
-	test.NotNil(
+	test.Error(
 		Load(path, &resource),
 	)
 }
 
-func TestRequiredInSubField(t *testing.T) {
+func TestRequiredInSubFieldButNoInParent(t *testing.T) {
 	test := assert.New(t)
 
 	path := write(``)
@@ -101,6 +101,32 @@ func TestRequiredInSubField(t *testing.T) {
 	}
 
 	resource := config{}
+	test.NoError(
+		Load(path, &resource),
+	)
+}
+
+func TestRequiredInSubFieldAndParentRequired(t *testing.T) {
+	test := assert.New(t)
+
+	path := write(``)
+	defer os.Remove(path)
+
+	type config struct {
+		A bool
+		B struct {
+			X bool
+			Y bool `required:"true"`
+		} `required:"true"`
+	}
+
+	resource := config{}
+	test.EqualError(
+		Load(path, &resource),
+		`B is required, but no value specified`,
+	)
+
+	resource.B.X = true
 	test.EqualError(
 		Load(path, &resource),
 		`B.Y is required, but no value specified`,

@@ -52,7 +52,7 @@ func Load(
 		return err
 	}
 
-	err = validate(resource)
+	err = validate(resource, true)
 	if err != nil {
 		return err
 	}
@@ -62,6 +62,7 @@ func Load(
 
 func validate(
 	value interface{},
+	parentRequired bool,
 	prefix ...string,
 ) error {
 	resource := reflect.Indirect(reflect.ValueOf(value))
@@ -76,9 +77,10 @@ func validate(
 	resourceStruct := resource.Type()
 	for index := 0; index < resourceStruct.NumField(); index++ {
 		var (
-			resourceField = resource.Field(index)
-			structField   = resourceStruct.Field(index)
-			fieldName     = string(structField.Name)
+			resourceField       = resource.Field(index)
+			structField         = resourceStruct.Field(index)
+			fieldName           = string(structField.Name)
+			structFieldRequired = structField.Tag.Get("required") == "true"
 		)
 
 		if fieldName[0] == strings.ToLower(fieldName)[0] {
@@ -98,7 +100,7 @@ func validate(
 				if err != nil {
 					return err
 				}
-			} else if structField.Tag.Get("required") == "true" {
+			} else if parentRequired && structFieldRequired {
 				return fmt.Errorf(
 					"%s is required, but no value specified",
 					strings.Join(append(prefix, structField.Name), "."),
@@ -113,6 +115,7 @@ func validate(
 		if resourceField.Kind() == reflect.Struct {
 			err := validate(
 				resourceField.Addr().Interface(),
+				structFieldRequired,
 				append(prefix, structField.Name)...,
 			)
 			if err != nil {
@@ -128,6 +131,7 @@ func validate(
 				if field.Kind() == reflect.Struct {
 					err := validate(
 						field.Addr().Interface(),
+						structFieldRequired,
 						append(
 							prefix, fmt.Sprintf("%s[%d]", structField.Name, i),
 						)...,
