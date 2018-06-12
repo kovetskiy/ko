@@ -70,6 +70,87 @@ b = true
 	test.Equal("aaa", resource.A)
 }
 
+func TestEnv(t *testing.T) {
+	test := assert.New(t)
+
+	path := write(`
+b = true
+`)
+	defer os.Remove(path)
+
+	type config struct {
+		A string `env:"aaa"`
+	}
+
+	os.Setenv("aaa", "valueA")
+	defer os.Setenv("aaa", "")
+
+	resource := config{}
+	test.NoError(
+		Load(path, &resource),
+	)
+
+	test.Equal("valueA", resource.A)
+}
+
+func TestEnvMissing(t *testing.T) {
+	test := assert.New(t)
+
+	path := write(`
+b = true
+`)
+	defer os.Remove(path)
+
+	type config struct {
+		A string `env:"bbb"`
+	}
+
+	resource := config{}
+	test.NoError(
+		Load(path, &resource),
+	)
+
+	test.Equal("", resource.A)
+}
+
+func TestEnvDefault(t *testing.T) {
+	test := assert.New(t)
+
+	path := write(`
+b = true
+`)
+	defer os.Remove(path)
+
+	type config struct {
+		A string `env:"bbb" default:"123"`
+	}
+
+	resource := config{}
+	test.NoError(
+		Load(path, &resource),
+	)
+
+	test.Equal("123", resource.A)
+}
+
+func TestEnvRequired(t *testing.T) {
+	test := assert.New(t)
+
+	path := write(`
+b = true
+`)
+	defer os.Remove(path)
+
+	type config struct {
+		A string `env:"bbb" required:"true"`
+	}
+
+	resource := config{}
+	test.Error(
+		Load(path, &resource),
+	)
+}
+
 func TestRequired(t *testing.T) {
 	test := assert.New(t)
 

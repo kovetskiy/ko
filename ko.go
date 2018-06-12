@@ -3,12 +3,14 @@ package ko
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"reflect"
 	"strings"
 
 	"gopkg.in/yaml.v2"
 
 	"github.com/kovetskiy/toml"
+	"github.com/reconquest/karma-go"
 )
 
 type (
@@ -91,6 +93,29 @@ func validate(
 			resourceField.Interface(),
 			reflect.Zero(resourceField.Type()).Interface(),
 		) {
+			envName := structField.Tag.Get("env")
+			if envName != "" {
+				envValue := os.Getenv(envName)
+				if envValue != "" {
+					err := yaml.Unmarshal(
+						[]byte(envValue),
+						resourceField.Addr().Interface(),
+					)
+					if err != nil {
+						return karma.Format(
+							err,
+							"unable to unmarshal env value for field: %s",
+							strings.Join(append(prefix, structField.Name), "."),
+						)
+					}
+				}
+			}
+		}
+
+		if reflect.DeepEqual(
+			resourceField.Interface(),
+			reflect.Zero(resourceField.Type()).Interface(),
+		) {
 			defaultValue := structField.Tag.Get("default")
 			if defaultValue != "" {
 				err := yaml.Unmarshal(
@@ -98,12 +123,23 @@ func validate(
 					resourceField.Addr().Interface(),
 				)
 				if err != nil {
-					return err
+					return karma.Format(
+						err,
+						"unable to unmarshal default value for field: %s",
+						strings.Join(append(prefix, structField.Name), "."),
+					)
 				}
 			} else if parentRequired && structFieldRequired {
+				envName := structField.Tag.Get("env")
+				additional := ""
+				if envName != "" {
+					additional = ", no value for environment variable " +
+						envName + " specified"
+				}
 				return fmt.Errorf(
-					"%s is required, but no value specified",
+					"%s is required, but no value specified%s",
 					strings.Join(append(prefix, structField.Name), "."),
+					additional,
 				)
 			}
 		}
