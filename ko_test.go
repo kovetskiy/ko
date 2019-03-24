@@ -204,13 +204,13 @@ func TestRequiredInSubFieldAndParentRequired(t *testing.T) {
 	resource := config{}
 	test.EqualError(
 		Load(path, &resource),
-		`B is required, but no value specified`,
+		`field "b" is required, but no value specified`,
 	)
 
 	resource.B.X = true
 	test.EqualError(
 		Load(path, &resource),
-		`B.Y is required, but no value specified`,
+		`field "b.y" is required, but no value specified`,
 	)
 }
 
@@ -231,7 +231,7 @@ func TestRequiredStructSubField(t *testing.T) {
 	resource := config{}
 	test.EqualError(
 		Load(path, &resource),
-		`B is required, but no value specified`,
+		`field "b" is required, but no value specified`,
 	)
 }
 
@@ -253,7 +253,7 @@ func TestRequiredAfterStruct(t *testing.T) {
 	resource := config{}
 	test.EqualError(
 		Load(path, &resource),
-		`C is required, but no value specified`,
+		`field "c" is required, but no value specified`,
 	)
 }
 
@@ -275,6 +275,57 @@ b = true
 	)
 
 	test.Equal("aaa", resource.A)
+}
+
+func TestRequiredUseYamlTag(t *testing.T) {
+	test := assert.New(t)
+
+	path := write(``)
+	defer os.Remove(path)
+
+	type config struct {
+		A string `yaml:"blah,omitempty" required:"true""`
+	}
+
+	resource := config{}
+	test.EqualError(
+		Load(path, &resource),
+		`field "blah" is required, but no value specified`,
+	)
+}
+
+func TestRequiredUseTomlTag(t *testing.T) {
+	test := assert.New(t)
+
+	path := write(``)
+	defer os.Remove(path)
+
+	type config struct {
+		A string `toml:"blah,omitempty" required:"true""`
+	}
+
+	resource := config{}
+	test.EqualError(
+		Load(path, &resource),
+		`field "blah" is required, but no value specified`,
+	)
+}
+
+func TestRequiredUseJsonTag(t *testing.T) {
+	test := assert.New(t)
+
+	path := write(``)
+	defer os.Remove(path)
+
+	type config struct {
+		A string `json:"blah" required:"true""`
+	}
+
+	resource := config{}
+	test.EqualError(
+		Load(path, &resource),
+		`field "blah" is required, but no value specified`,
+	)
 }
 
 func TestSkipUnexportedFields(t *testing.T) {

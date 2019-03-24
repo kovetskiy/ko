@@ -7,8 +7,8 @@ import (
 	"reflect"
 	"strings"
 
-	"gopkg.in/yaml.v2"
-
+	"github.com/go-yaml/yaml"
+	"github.com/iancoleman/strcase"
 	"github.com/kovetskiy/toml"
 	"github.com/reconquest/karma-go"
 )
@@ -105,7 +105,10 @@ func validate(
 						return karma.Format(
 							err,
 							"unable to unmarshal env value for field: %s",
-							strings.Join(append(prefix, structField.Name), "."),
+							strings.Join(
+								push(prefix, getFieldKey(structField)),
+								".",
+							),
 						)
 					}
 				}
@@ -125,8 +128,11 @@ func validate(
 				if err != nil {
 					return karma.Format(
 						err,
-						"unable to unmarshal default value for field: %s",
-						strings.Join(append(prefix, structField.Name), "."),
+						"unable to unmarshal default value for field %q",
+						strings.Join(
+							push(prefix, getFieldKey(structField)),
+							".",
+						),
 					)
 				}
 			} else if parentRequired && structFieldRequired {
@@ -137,8 +143,11 @@ func validate(
 						envName + " specified"
 				}
 				return fmt.Errorf(
-					"%s is required, but no value specified%s",
-					strings.Join(append(prefix, structField.Name), "."),
+					"field %q is required, but no value specified%s",
+					strings.Join(
+						push(prefix, getFieldKey(structField)),
+						".",
+					),
 					additional,
 				)
 			}
@@ -152,7 +161,7 @@ func validate(
 			err := validate(
 				resourceField.Addr().Interface(),
 				structFieldRequired,
-				append(prefix, structField.Name)...,
+				push(prefix, getFieldKey(structField))...,
 			)
 			if err != nil {
 				return err
@@ -168,8 +177,11 @@ func validate(
 					err := validate(
 						field.Addr().Interface(),
 						structFieldRequired,
-						append(
-							prefix, fmt.Sprintf("%s[%d]", structField.Name, i),
+						push(
+							prefix,
+							fmt.Sprintf(
+								"%s[%d]", getFieldKey(structField), i,
+							),
 						)...,
 					)
 					if err != nil {
@@ -181,4 +193,23 @@ func validate(
 	}
 
 	return nil
+}
+
+func getFieldKey(field reflect.StructField) string {
+	knownTags := []string{"yaml", "toml", "json"}
+	for _, tag := range knownTags {
+		value, ok := field.Tag.Lookup(tag)
+		if !ok || value == "" {
+			continue
+		}
+
+		parts := strings.Split(value, ",")
+		return parts[0]
+	}
+
+	return strcase.ToSnake(field.Name)
+}
+
+func push(prefix []string, value string) []string {
+	return append(append([]string{}, prefix...), value)
 }
