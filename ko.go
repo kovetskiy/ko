@@ -28,28 +28,46 @@ var (
 	DefaultUnmarshaller Unmarshaller = toml.Unmarshal
 )
 
+type (
+	// RequireFile is an option for Load method which can be used to skip
+	// non-existing file and load all default values for the config fields.
+	RequireFile bool
+)
+
 // Load resource data from specified file. unmarshaller variable can be passed
 // if you want to use custom unmarshaller, by default will be used
 // DefaultUnmarshaller (toml.Unmarshal)
 func Load(
 	path string,
 	resource interface{},
-	unmarshaller ...Unmarshaller,
+	opts ...interface{},
 ) error {
-	if len(unmarshaller) > 1 {
-		panic("passed more then one unmarshaller")
+	var unmarshaller Unmarshaller
+	var requireFile bool = true
+
+	for _, opt := range opts {
+		switch opt := opt.(type) {
+		case func([]byte, interface{}) error:
+			unmarshaller = opt
+		case Unmarshaller:
+			unmarshaller = opt
+		case RequireFile:
+			requireFile = bool(opt)
+		}
 	}
 
-	if len(unmarshaller) == 0 {
-		unmarshaller = append(unmarshaller, DefaultUnmarshaller)
+	if unmarshaller == nil {
+		unmarshaller = DefaultUnmarshaller
 	}
 
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
-		return err
+		if os.IsNotExist(err) && requireFile {
+			return err
+		}
 	}
 
-	err = unmarshaller[0](data, resource)
+	err = unmarshaller(data, resource)
 	if err != nil {
 		return err
 	}
