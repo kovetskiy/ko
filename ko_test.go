@@ -393,3 +393,36 @@ func write(data string) string {
 
 	return file.Name()
 }
+
+func TestRequireFileOpt(t *testing.T) {
+	test := assert.New(t)
+
+	path := write(`
+sequence = "AATGAGTC"
+`)
+
+	defer os.Remove(path)
+
+	type config struct {
+		Sequence string `default:"UNKNOWN"`
+	}
+
+	{
+		var resource config
+		test.NoError(Load(path, &resource, RequireFile(false)))
+		test.Equal("AATGAGTC", resource.Sequence)
+	}
+
+	test.NoError(os.Remove(path))
+
+	{
+		var resource config
+		test.NoError(Load(path, &resource, RequireFile(false)))
+		test.Equal("UNKNOWN", resource.Sequence)
+	}
+
+	{
+		var resource config
+		test.Error(Load(path, &resource, RequireFile(true)))
+	}
+}
