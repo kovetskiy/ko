@@ -22,11 +22,9 @@ type (
 	Unmarshaller func([]byte, interface{}) error
 )
 
-var (
-	// DefaultUnmarshaller will be used for unmarshalling if no unmarshaller
-	// specified.
-	DefaultUnmarshaller Unmarshaller = toml.Unmarshal
-)
+// DefaultUnmarshaller will be used for unmarshalling if no unmarshaller
+// specified.
+var DefaultUnmarshaller Unmarshaller = toml.Unmarshal
 
 type (
 	// RequireFile is an option for Load method which can be used to skip
@@ -87,6 +85,21 @@ func validate(
 ) error {
 	resource := reflect.Indirect(reflect.ValueOf(value))
 	if resource.Kind() == reflect.Map {
+		return nil
+	}
+
+	if resource.Kind() == reflect.Slice {
+		for i := 0; i < resource.Len(); i++ {
+			err := validate(resource.Index(i), parentRequired, prefix...)
+			if err != nil {
+				return karma.Format(
+					err,
+					"%d item is invalid",
+					i,
+				)
+			}
+		}
+
 		return nil
 	}
 

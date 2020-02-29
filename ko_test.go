@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/go-yaml/yaml"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -48,6 +49,31 @@ x = "www"
 	}
 
 	test.Equal(ko, resource)
+}
+
+func TestUnmarshal_IntoSlice(t *testing.T) {
+	test := assert.New(t)
+
+	path := write(`
+- a: 1
+  b: 2
+- a: 3
+`)
+	defer os.Remove(path)
+
+	type config struct {
+		A int
+		B int
+	}
+
+	var result []config
+	test.NoError(
+		Load(path, &result, yaml.Unmarshal),
+	)
+
+	test.Len(result, 2)
+	test.Equal(config{A: 1, B: 2}, result[0])
+	test.Equal(config{A: 3}, result[1])
 }
 
 func TestDefault(t *testing.T) {
