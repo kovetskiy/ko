@@ -146,6 +146,21 @@ func validate(
 			}
 		}
 
+		for resourceField.Kind() == reflect.Ptr {
+			resourceField = resourceField.Elem()
+		}
+
+		if resourceField.Kind() == reflect.Struct {
+			err := validate(
+				resourceField.Addr().Interface(),
+				structFieldRequired,
+				push(prefix, getFieldKey(structField))...,
+			)
+			if err != nil {
+				return err
+			}
+		}
+
 		if reflect.DeepEqual(
 			resourceField.Interface(),
 			reflect.Zero(resourceField.Type()).Interface(),
@@ -182,23 +197,6 @@ func validate(
 					additional,
 				)
 			}
-		}
-
-		for resourceField.Kind() == reflect.Ptr {
-			resourceField = resourceField.Elem()
-		}
-
-		if resourceField.Kind() == reflect.Struct {
-			err := validate(
-				resourceField.Addr().Interface(),
-				structFieldRequired,
-				push(prefix, getFieldKey(structField))...,
-			)
-			if err != nil {
-				return err
-			}
-
-			continue
 		}
 
 		if resourceField.Kind() == reflect.Slice {

@@ -230,7 +230,7 @@ func TestRequiredInSubFieldAndParentRequired(t *testing.T) {
 	resource := config{}
 	test.EqualError(
 		Load(path, &resource),
-		`field "b" is required, but no value specified`,
+		`field "b.y" is required, but no value specified`,
 	)
 
 	resource.B.X = true
@@ -424,5 +424,43 @@ sequence = "AATGAGTC"
 	{
 		var resource config
 		test.Error(Load(path, &resource, RequireFile(true)))
+	}
+}
+
+func TestDoNotError_ForRequiredButFilledWithDefault(t *testing.T) {
+	test := assert.New(t)
+
+	type resource struct {
+		Foo string `yaml:"foo" required:"true" env:"FOO" default:"default-foo"`
+		Bar string `yaml:"bar" required:"true" env:"BAR" default:"bar"`
+	}
+
+	type config struct {
+		Resource resource `required:"true"`
+	}
+
+	{
+		var cfg config
+		err := Load("/does/not/exist", &cfg, RequireFile(false))
+		test.NoError(err)
+	}
+}
+
+func TestMeaningfulErrorForRequiredStruct(t *testing.T) {
+	test := assert.New(t)
+
+	type resource struct {
+		Foo string `yaml:"foo" required:"true" env:"FOO" default:"default-foo"`
+		Bar string `yaml:"bar" required:"true" env:"BAR" default:""`
+	}
+
+	type config struct {
+		Resource resource `required:"true"`
+	}
+
+	{
+		var cfg config
+		err := Load("/does/not/exist", &cfg, RequireFile(false))
+		test.EqualError(err, `field "resource.bar" is required, but no value specified, no value for environment variable BAR specified`)
 	}
 }
