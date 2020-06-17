@@ -310,7 +310,7 @@ func TestRequiredUseYamlTag(t *testing.T) {
 	defer os.Remove(path)
 
 	type config struct {
-		A string `yaml:"blah,omitempty" required:"true""`
+		A string `yaml:"blah,omitempty" required:"true"`
 	}
 
 	resource := config{}
@@ -327,7 +327,7 @@ func TestRequiredUseTomlTag(t *testing.T) {
 	defer os.Remove(path)
 
 	type config struct {
-		A string `toml:"blah,omitempty" required:"true""`
+		A string `toml:"blah,omitempty" required:"true"`
 	}
 
 	resource := config{}
@@ -344,7 +344,7 @@ func TestRequiredUseJsonTag(t *testing.T) {
 	defer os.Remove(path)
 
 	type config struct {
-		A string `json:"blah" required:"true""`
+		A string `json:"blah" required:"true"`
 	}
 
 	resource := config{}
@@ -352,6 +352,97 @@ func TestRequiredUseJsonTag(t *testing.T) {
 		Load(path, &resource),
 		`field "blah" is required, but no value specified`,
 	)
+}
+
+func TestPointerField_ValueNotSpecified(t *testing.T) {
+	test := assert.New(t)
+
+	path := write(``)
+	defer os.Remove(path)
+
+	type config struct {
+		A *bool `json:"a"`
+	}
+
+	resource := config{}
+	test.NoError(Load(path, &resource, yaml.Unmarshal))
+	test.Nil(resource.A)
+}
+
+func TestPointerField_ValueSpecified(t *testing.T) {
+	test := assert.New(t)
+
+	path := write(`a: false`)
+	defer os.Remove(path)
+
+	type config struct {
+		A *bool `json:"a"`
+	}
+
+	resource := config{}
+	test.NoError(Load(path, &resource, yaml.Unmarshal))
+	test.NotNil(resource.A)
+	test.False(*resource.A)
+}
+
+func TestPointerField_ValueNotSpecified_UseDefault(t *testing.T) {
+	test := assert.New(t)
+
+	path := write(``)
+	defer os.Remove(path)
+
+	type config struct {
+		A *bool `json:"a" default:"false"`
+	}
+
+	resource := config{}
+	test.NoError(Load(path, &resource, yaml.Unmarshal))
+	if test.NotNil(resource.A) {
+		test.False(*resource.A)
+	}
+}
+
+func TestPointerFields_ValueNotSpecified(t *testing.T) {
+	test := assert.New(t)
+
+	path := write(``)
+	defer os.Remove(path)
+
+	type Blah struct {
+		A *bool `json:"a"`
+	}
+
+	type config struct {
+		Blah *Blah `json:"blah"`
+	}
+
+	resource := config{}
+	test.NoError(Load(path, &resource, yaml.Unmarshal))
+	test.Nil(resource.Blah)
+}
+
+func TestPointerFields_ValueSpecified(t *testing.T) {
+	test := assert.New(t)
+
+	path := write(`
+blah:
+    a: true
+`)
+	defer os.Remove(path)
+
+	type Blah struct {
+		A *bool `json:"a"`
+	}
+
+	type config struct {
+		Blah *Blah `json:"blah" required:"true"`
+	}
+
+	resource := config{}
+	test.NoError(Load(path, &resource, yaml.Unmarshal))
+	test.NotNil(resource.Blah)
+	test.NotNil(resource.Blah.A)
+	test.True(*resource.Blah.A)
 }
 
 func TestSkipUnexportedFields(t *testing.T) {

@@ -146,7 +146,15 @@ func validate(
 			}
 		}
 
-		for resourceField.Kind() == reflect.Ptr {
+		for {
+			if resourceField.Kind() != reflect.Ptr {
+				break
+			}
+
+			if resourceField.IsNil() {
+				break
+			}
+
 			resourceField = resourceField.Elem()
 		}
 
