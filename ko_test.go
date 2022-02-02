@@ -555,3 +555,162 @@ func TestMeaningfulErrorForRequiredStruct(t *testing.T) {
 		test.EqualError(err, `field "resource.bar" is required, but no value specified, no value for environment variable BAR specified`)
 	}
 }
+
+func TestCheckRequiredFieldsInMap_Missing(t *testing.T) {
+	test := assert.New(t)
+
+	path := write(`
+foo:
+ key:
+   unused: 123
+`)
+	defer os.Remove(path)
+
+	type data struct {
+		Bar string `required:"true"`
+	}
+
+	type config struct {
+		Foo map[string]data `required:"true"`
+	}
+
+	{
+		var cfg config
+		err := Load(path, &cfg, yaml.Unmarshal)
+		test.EqualError(err, `field "foo[key].bar" is required, but no value specified`)
+	}
+}
+
+func TestCheckRequiredFieldsInMap_Default(t *testing.T) {
+	test := assert.New(t)
+
+	path := write(`
+foo:
+ key:
+   unused: 123
+`)
+	defer os.Remove(path)
+
+	type data struct {
+		Bar string `required:"true" default:"q"`
+	}
+
+	type config struct {
+		Foo map[string]*data `required:"true"`
+	}
+
+	{
+		var cfg config
+		err := Load(path, &cfg, yaml.Unmarshal)
+		test.Equal("q", cfg.Foo["key"].Bar)
+		test.NoError(err)
+	}
+}
+
+func TestCheckRequiredFieldsInMap_DefaultNotaddressable(t *testing.T) {
+	test := assert.New(t)
+
+	path := write(`
+foo:
+ key:
+   unused: 123
+`)
+	defer os.Remove(path)
+
+	type data struct {
+		Bar string `required:"true" default:"q"`
+	}
+
+	type config struct {
+		Foo map[string]data `required:"true"`
+	}
+
+	{
+		var cfg config
+		err := Load(path, &cfg, yaml.Unmarshal)
+		test.EqualError(err, `target field is not addressable "foo[key].bar"`)
+	}
+}
+
+func TestCheckRequiredFieldsInMap_Env(t *testing.T) {
+	test := assert.New(t)
+
+	path := write(`
+foo:
+ key:
+   unused: 123
+`)
+	defer os.Remove(path)
+
+	type data struct {
+		Bar string `required:"true" env:"aaa"`
+	}
+
+	type config struct {
+		Foo map[string]*data `required:"true"`
+	}
+
+	os.Setenv("aaa", "valueA")
+	defer os.Setenv("aaa", "")
+
+	{
+		var cfg config
+		err := Load(path, &cfg, yaml.Unmarshal)
+		test.Equal("valueA", cfg.Foo["key"].Bar)
+		test.NoError(err)
+	}
+}
+
+func TestCheckRequiredFieldsInMap_EnvNotaddressable(t *testing.T) {
+	test := assert.New(t)
+
+	path := write(`
+foo:
+ key:
+   unused: 123
+`)
+	defer os.Remove(path)
+
+	type data struct {
+		Bar string `required:"true" env:"aaa"`
+	}
+
+	type config struct {
+		Foo map[string]data `required:"true"`
+	}
+
+	os.Setenv("aaa", "valueA")
+	defer os.Setenv("aaa", "")
+
+	{
+		var cfg config
+		err := Load(path, &cfg, yaml.Unmarshal)
+		test.EqualError(err, `target field is not addressable "foo[key].bar"`)
+	}
+}
+
+func TestCheckRequiredFieldsInMap_Value(t *testing.T) {
+	test := assert.New(t)
+
+	path := write(`
+foo:
+ key:
+   bar: 123
+`)
+	defer os.Remove(path)
+
+	type data struct {
+		Bar string `required:"true"`
+	}
+
+	type config struct {
+		Foo map[string]data `required:"true"`
+	}
+
+	{
+		var cfg config
+		err := Load(path, &cfg, yaml.Unmarshal)
+		test.Equal("123", cfg.Foo["key"].Bar)
+		test.NoError(err)
+	}
+}

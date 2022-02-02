@@ -128,6 +128,16 @@ func validate(
 			if envName != "" {
 				envValue := os.Getenv(envName)
 				if envValue != "" {
+					if !resourceField.CanAddr() {
+						return fmt.Errorf(
+							"target field is not addressable %q",
+							strings.Join(
+								push(prefix, getFieldKey(structField)),
+								".",
+							),
+						)
+					}
+
 					err := yaml.Unmarshal(
 						[]byte(envValue),
 						resourceField.Addr().Interface(),
@@ -175,6 +185,16 @@ func validate(
 		) {
 			defaultValue := structField.Tag.Get("default")
 			if defaultValue != "" {
+				if !resourceField.CanAddr() {
+					return fmt.Errorf(
+						"target field is not addressable %q",
+						strings.Join(
+							push(prefix, getFieldKey(structField)),
+							".",
+						),
+					)
+				}
+
 				err := yaml.Unmarshal(
 					[]byte(defaultValue),
 					resourceField.Addr().Interface(),
@@ -224,6 +244,25 @@ func validate(
 					if err != nil {
 						return err
 					}
+				}
+			}
+		}
+
+		if resourceField.Kind() == reflect.Map {
+			for _, key := range resourceField.MapKeys() {
+				field := resourceField.MapIndex(key)
+				err := validate(
+					field.Interface(),
+					structFieldRequired,
+					push(
+						prefix,
+						fmt.Sprintf(
+							"%s[%s]", getFieldKey(structField), key,
+						),
+					)...,
+				)
+				if err != nil {
+					return err
 				}
 			}
 		}
