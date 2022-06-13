@@ -278,7 +278,7 @@ func getFieldKey(field reflect.StructField) string {
 	knownTags := []string{"yaml", "toml", "json"}
 	for _, tag := range knownTags {
 		value, ok := field.Tag.Lookup(tag)
-		if !ok || value == "" {
+		if !ok || value == "" || value == "-" {
 			continue
 		}
 
