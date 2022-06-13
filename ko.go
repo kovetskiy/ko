@@ -251,18 +251,21 @@ func validate(
 		if resourceField.Kind() == reflect.Map {
 			for _, key := range resourceField.MapKeys() {
 				field := resourceField.MapIndex(key)
-				err := validate(
-					field.Interface(),
-					structFieldRequired,
-					push(
-						prefix,
-						fmt.Sprintf(
-							"%s[%s]", getFieldKey(structField), key,
-						),
-					)...,
-				)
-				if err != nil {
-					return err
+
+				if reflect.Indirect(reflect.ValueOf(field.Interface())).Kind() == reflect.Struct {
+					err := validate(
+						field.Interface(),
+						structFieldRequired,
+						push(
+							prefix,
+							fmt.Sprintf(
+								"%s[%s]", getFieldKey(structField), key,
+							),
+						)...,
+					)
+					if err != nil {
+						return err
+					}
 				}
 			}
 		}

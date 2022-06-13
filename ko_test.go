@@ -1,6 +1,7 @@
 package ko
 
 import (
+	"encoding/json"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -552,7 +553,10 @@ func TestMeaningfulErrorForRequiredStruct(t *testing.T) {
 	{
 		var cfg config
 		err := Load("/does/not/exist", &cfg, RequireFile(false))
-		test.EqualError(err, `field "resource.bar" is required, but no value specified, no value for environment variable BAR specified`)
+		test.EqualError(
+			err,
+			`field "resource.bar" is required, but no value specified, no value for environment variable BAR specified`,
+		)
 	}
 }
 
@@ -711,6 +715,31 @@ foo:
 		var cfg config
 		err := Load(path, &cfg, yaml.Unmarshal)
 		test.Equal("123", cfg.Foo["key"].Bar)
+		test.NoError(err)
+	}
+}
+
+func TestCheckMapTypeInt(t *testing.T) {
+	test := assert.New(t)
+
+	path := write(`{
+	"foo": {
+		"": 1,
+		"A": 2
+	}
+}
+`)
+	defer os.Remove(path)
+
+	type config struct {
+		Foo map[string]int64 `required:"true"`
+	}
+
+	{
+		var cfg config
+		err := Load(path, &cfg, json.Unmarshal)
+		test.Equal(int64(1), cfg.Foo[""])
+		test.Equal(int64(2), cfg.Foo["A"])
 		test.NoError(err)
 	}
 }
