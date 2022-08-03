@@ -10,7 +10,7 @@ import (
 	"github.com/iancoleman/strcase"
 	"github.com/kovetskiy/toml"
 	"github.com/reconquest/karma-go"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 type (
