@@ -1,0 +1,5 @@
+Variable | Environment Variable | Default Value | Type | Required |
+--- | --- | --- | --- | --- |
+{{- range $field := .Fields }}
+{{ $field.Path | backtick }} | {{ $field.Env | backtick }} | {{ $field.DefaultValue | backtick }} | {{ $field.Type | backtick }} | {{ $field.Required }} |
+{{- end }}

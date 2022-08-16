@@ -289,6 +289,6 @@ func getFieldKey(field reflect.StructField) string {
 	return strcase.ToSnake(field.Name)
 }
 
-func push(prefix []string, value string) []string {
-	return append(append([]string{}, prefix...), value)
+func push[K any](prefix []K, value K) []K {
+	return append(append([]K{}, prefix...), value)
 }
