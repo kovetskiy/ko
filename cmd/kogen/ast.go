@@ -9,6 +9,9 @@ import (
 )
 
 func astPath(field *ast.Field) string {
+	if field.Tag == nil {
+		return strcase.ToSnake(astFieldName(field))
+	}
 	allTags := astTags(field.Tag.Value)
 	knownTags := []string{"yaml", "toml", "json"}
 	for _, tag := range knownTags {
