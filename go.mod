@@ -3,10 +3,10 @@ module github.com/kovetskiy/ko
 go 1.17
 
 require (
+	github.com/BurntSushi/toml v1.2.1
 	github.com/iancoleman/strcase v0.2.0
-	github.com/kovetskiy/toml v0.2.0
-	github.com/reconquest/karma-go v0.0.0-20211029072727-6027c6225ce4
-	github.com/stretchr/testify v1.8.0
+	github.com/reconquest/karma-go v0.0.0-20220904173930-21741aa386a6
+	github.com/stretchr/testify v1.8.1
 	gopkg.in/yaml.v3 v3.0.1
 )
 
