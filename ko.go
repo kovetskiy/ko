@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/iancoleman/strcase"
-	"github.com/kovetskiy/toml"
+	"github.com/BurntSushi/toml"
 	"github.com/reconquest/karma-go"
 	"gopkg.in/yaml.v3"
 )
