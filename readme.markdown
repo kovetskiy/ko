@@ -52,6 +52,24 @@ if err != nil {
 }
 ```
 
+## Kogen
+
+kogen parses source code using ast standard packages, finds specified struct,
+and generates documentation based on struct field tags.
+
+```
+kogen /path/to/source/code NameOfStruct
+```
+
+will find NameOfStruct in /path/to/source/code and generate the following table:
+
+Variable | Environment Variable | Default Value | Type | Required |
+--- | --- | --- | --- | --- |
+`live.address` | `LIVE_FEED_ADDRESS` | `<no value>` | `string` | true |
+`live.buffer_size` | `LIVE_FEED_BUFFER_SIZE` | `1` | `int` | true |
+`cache.address` | `CACHE_ADDRESS` | `<no value>` | `string` | true |
+`cache.max_call_recv_msg_size` | `CACHE_MAX_CALL_RECV_MSG_SIZE` | `33554432` | `int` | true |
+`http.listen` | `HTTP_LISTEN` | `:80` | `string` | true |
 
 The package doesn't support maps.
 

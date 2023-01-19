@@ -611,6 +611,27 @@ foo:
 	}
 }
 
+func TestCheckRequired_DefaultInSubfield(t *testing.T) {
+	test := assert.New(t)
+
+	type Bar struct {
+		Value string `yaml:"value" required:"true" env:"VALUE" default:"bar-value"`
+	}
+
+	type config struct {
+		Foo string `yaml:"foo" required:"true" env:"FOO" default:"foo"`
+		Bar Bar    `yaml:"bar" required:"true"           default:""`
+	}
+
+	{
+		var cfg config
+		err := Load("", &cfg, yaml.Unmarshal, RequireFile(false))
+		test.Equal("foo", cfg.Foo)
+		test.Equal("bar-value", cfg.Bar.Value)
+		test.NoError(err)
+	}
+}
+
 func TestCheckRequiredFieldsInMap_DefaultNotaddressable(t *testing.T) {
 	test := assert.New(t)
 
