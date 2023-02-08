@@ -7,8 +7,8 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/iancoleman/strcase"
 	"github.com/BurntSushi/toml"
+	"github.com/iancoleman/strcase"
 	"github.com/reconquest/karma-go"
 	"gopkg.in/yaml.v3"
 )
@@ -168,7 +168,7 @@ func validate(
 			resourceField = resourceField.Elem()
 		}
 
-		if resourceField.Kind() == reflect.Struct {
+		if resourceField.Kind() == reflect.Struct && resourceField.CanAddr() {
 			err := validate(
 				resourceField.Addr().Interface(),
 				structFieldRequired,
