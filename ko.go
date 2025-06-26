@@ -169,6 +169,16 @@ func validate(
 		}
 
 		if resourceField.Kind() == reflect.Struct && resourceField.CanAddr() {
+			// Skip validation of zero-valued structs if they are not required
+			isZeroValue := reflect.DeepEqual(
+				resourceField.Interface(),
+				reflect.Zero(resourceField.Type()).Interface(),
+			)
+			if isZeroValue && !structFieldRequired {
+				// Skip validation for optional zero-valued structs
+				continue
+			}
+
 			err := validate(
 				resourceField.Addr().Interface(),
 				structFieldRequired,
