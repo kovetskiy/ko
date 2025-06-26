@@ -764,3 +764,94 @@ func TestCheckMapTypeInt(t *testing.T) {
 		test.NoError(err)
 	}
 }
+
+func TestOptionalStructWithRequiredFields(t *testing.T) {
+	// Test case: Optional struct containing required fields should not
+	// validate required fields when the optional struct is not provided
+
+	type RequiredCredentials struct {
+		APIKey string `yaml:"api_key" required:"true"`
+		Secret string `yaml:"secret" required:"true"`
+	}
+
+	type OptionalAuth struct {
+		Credentials RequiredCredentials `yaml:"credentials" required:"true"`
+		Timeout     int                 `yaml:"timeout" required:"true"`
+	}
+
+	type Config struct {
+		// This field is optional
+		Auth OptionalAuth `yaml:"auth" required:"false"`
+		// This field is required
+		Port int `yaml:"port" required:"true"`
+	}
+
+	// Test 1: Empty config should fail (missing required port)
+	t.Run("empty config fails on required field", func(t *testing.T) {
+		test := assert.New(t)
+		path := write(``)
+		defer os.Remove(path)
+
+		var cfg Config
+		err := Load(path, &cfg, yaml.Unmarshal)
+		test.Error(err)
+		test.Contains(err.Error(), "port")
+	})
+
+	// Test 2: Config with only port should succeed (auth is optional)
+	t.Run("config without optional struct succeeds", func(t *testing.T) {
+		test := assert.New(t)
+		// testdata/port-only.yaml contains:
+		// port: 8080
+		path := write(`port: 8080`)
+		defer os.Remove(path)
+
+		var cfg Config
+		err := Load(path, &cfg, yaml.Unmarshal)
+		test.NoError(err) // This currently FAILS but should PASS
+		test.Equal(8080, cfg.Port)
+	})
+
+	// Test 3: Config with auth but missing required fields should fail
+	t.Run("config with incomplete optional struct fails", func(t *testing.T) {
+		test := assert.New(t)
+		// testdata/incomplete-auth.yaml contains:
+		// port: 8080
+		// auth:
+		//   timeout: 30
+		path := write(`port: 8080
+auth:
+  timeout: 30`)
+		defer os.Remove(path)
+
+		var cfg Config
+		err := Load(path, &cfg, yaml.Unmarshal)
+		test.Error(err)
+		test.Contains(err.Error(), "auth.credentials")
+	})
+
+	// Test 4: Complete config should succeed
+	t.Run("complete config succeeds", func(t *testing.T) {
+		test := assert.New(t)
+		// testdata/complete.yaml contains:
+		// port: 8080
+		// auth:
+		//   credentials:
+		//     api_key: "key123"
+		//     secret: "secret456"
+		//   timeout: 30
+		path := write(`port: 8080
+auth:
+  credentials:
+    api_key: "key123"
+    secret: "secret456"
+  timeout: 30`)
+		defer os.Remove(path)
+
+		var cfg Config
+		err := Load(path, &cfg, yaml.Unmarshal)
+		test.NoError(err)
+		test.Equal(8080, cfg.Port)
+		test.Equal("key123", cfg.Auth.Credentials.APIKey)
+	})
+}
