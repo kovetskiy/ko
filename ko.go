@@ -181,7 +181,7 @@ func validate(
 
 			err := validate(
 				resourceField.Addr().Interface(),
-				structFieldRequired,
+				parentRequired && structFieldRequired,
 				push(prefix, getFieldKey(structField))...,
 			)
 			if err != nil {
@@ -243,7 +243,7 @@ func validate(
 				if field.Kind() == reflect.Struct {
 					err := validate(
 						field.Addr().Interface(),
-						structFieldRequired,
+						parentRequired && structFieldRequired,
 						push(
 							prefix,
 							fmt.Sprintf(
@@ -265,7 +265,7 @@ func validate(
 				if reflect.Indirect(reflect.ValueOf(field.Interface())).Kind() == reflect.Struct {
 					err := validate(
 						field.Interface(),
-						structFieldRequired,
+						parentRequired && structFieldRequired,
 						push(
 							prefix,
 							fmt.Sprintf(
