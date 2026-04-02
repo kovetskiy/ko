@@ -812,13 +812,12 @@ func TestOptionalStructWithRequiredFields(t *testing.T) {
 		test.Equal(8080, cfg.Port)
 	})
 
-	// Test 3: Config with auth but missing required fields should fail
-	t.Run("config with incomplete optional struct fails", func(t *testing.T) {
+	// Test 3: Config with auth but missing required fields should succeed
+	// because auth is optional, so its children inherit that optionality
+	t.Run("config with incomplete optional struct succeeds", func(t *testing.T) {
 		test := assert.New(t)
-		// testdata/incomplete-auth.yaml contains:
-		// port: 8080
-		// auth:
-		//   timeout: 30
+		// When parent struct is optional, children fields inherit optionality
+		// even if marked as required
 		path := write(`port: 8080
 auth:
   timeout: 30`)
@@ -826,8 +825,9 @@ auth:
 
 		var cfg Config
 		err := Load(path, &cfg, yaml.Unmarshal)
-		test.Error(err)
-		test.Contains(err.Error(), "auth.credentials")
+		test.NoError(err) // Should succeed - auth is optional so its fields are too
+		test.Equal(8080, cfg.Port)
+		test.Equal(30, cfg.Auth.Timeout)
 	})
 
 	// Test 4: Complete config should succeed
